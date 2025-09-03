@@ -1,0 +1,10 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v2025.2.11
+_src_path: gh:WorldconVotingSystems/nomnom
+advisory_votes: true
+convention_name: LAcon V
+domain_name: www.lacon.org
+email_domain_name: lacon.org
+hugo_packet_enabled: true
+project_slug: lacon-v
+use_development: false

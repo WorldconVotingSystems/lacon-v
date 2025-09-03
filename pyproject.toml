@@ -1,0 +1,40 @@
+
+[project]
+name = "lacon-v"
+version = "1.0.0"
+description = "Convention app for LAcon V"
+authors = []
+dependencies = [
+  "nomnom-hugoawards",
+  "granian>=1.6.3",
+  "social-auth-app-django~=5.4",
+]
+requires-python = "~=3.13.0"
+readme = "README.md"
+license = {text = "MIT"}
+
+[tool.ruff.lint.isort]
+known-first-party = ["", "lacon_v_app"]
+
+[tool.uv]
+dev-dependencies = [
+    "factory-boy~=3.3.0",
+    "pytest~=8.3.3",
+    "pytest-django~=4.9.0",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+looponfailroots = ["config", "lacon_v_app"]
+django_find_project = false
+filterwarnings = [
+  # I know looponfailroots is 'deprecated' but ... i'm tired of seeing it
+  "ignore::DeprecationWarning:xdist.plugin"
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["config", "lacon_v_app"]

@@ -1,0 +1,45 @@
+# These are support services. The webapp and queues themselves
+# should be run using `just serve` and `just worker`.
+#
+# This is _not_ a production compose file, it's just for iterating on themes and customizations!
+name: "lacon-v"
+services:
+  db:
+    image: postgres:17.1
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./deploy/initdb/:/docker-entrypoint-initdb.d/:ro # Mount init scripts
+    ports:
+      - 5432
+    environment:
+      - POSTGRES_DB=${NOM_DB_NAME}
+      - POSTGRES_USER=${NOM_DB_USER}
+      - POSTGRES_PASSWORD=${NOM_DB_PASSWORD}
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready", "-d", "$NOM_DB_NAME", "-u", "$NOM_DB_USER"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+
+  redis:
+    image: redis:7
+    ports:
+      - 6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "_ping"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 5s
+
+  # support
+  mailcatcher:
+    image: marlonb/mailcrab:latest
+    ports:
+      - 1080
+      - 1025
+
+volumes:
+  db-data:
