@@ -1,12 +1,6 @@
-# This is a sample deployment service configuration, based
-# on the production deployment for Seattle in 2025. Modify this
-# if you want to use docker-compose to run nomnom.
-#
-# It depends on the creation of a valid `.env` file, a sample
-# of which you can find in the [Seattle in 2025 repo](https://github.com/WorldconVotingSystems/lacon-v/blob/main/deploy/production/.env.template).
-name: "nomnom"
+name: "lacon-v"
 x-image: &image
-  image: ghcr.io/your-org/your-convention:${NOMNOM_VERSION:-main}
+  image: ${NOMNOM_IMAGE:-ghcr.io/worldconvotingsystems/lacon-v}:${NOMNOM_VERSION:-main}
 x-boot: &boot
   depends_on:
     boot:
@@ -15,7 +9,7 @@ x-redis: &redis
   NOM_REDIS_HOST: redis
   NOM_REDIS_PORT: 6379
 x-db: &db
-  NOM_DB_HOST: db
+  NOM_DB_HOST: pgbouncer
   NOM_DB_PORT: 5432
   NOM_DB_NAME: $NOM_DB_NAME
   NOM_DB_USER: $NOM_DB_USER
@@ -32,7 +26,7 @@ services:
       - "127.0.0.1:8000:8000"
     command: bash /app/docker/start.sh server
     links:
-      - db
+      - pgbouncer
       - redis
     env_file:
       - .env
@@ -49,32 +43,19 @@ services:
           "CMD",
           "/bin/bash",
           "-c",
-          "set -o pipefail; curl -s --fail -H 'Host: YOUR_PUBLIC_HOSTNAME' http://localhost:8000/watchman/ | jq --exit-status '.databases[].default.ok == true' > /dev/null",
+          "set -o pipefail; curl -s --fail -H 'Host: nomnom-staging.lacon.org' http://localhost:8000/watchman/ | jq --exit-status '.databases[].default.ok == true' > /dev/null",
         ]
 
   worker:
     <<: [*image, *boot]
     command: /app/docker/start.sh worker
     links:
-      - db
+      - pgbouncer
       - redis
     env_file:
       - .env
     environment:
       <<: [*db, *redis, *staticfiles]
-
-  scheduler:
-    <<: [*image, *boot]
-    command: /app/docker/start.sh beat
-    links:
-      - db
-      - redis
-    env_file:
-      - .env
-    environment:
-      <<: [*db, *redis, *staticfiles]
-    volumes:
-      - staticfiles:/staticfiles:ro
 
   boot:
     <<: *image
@@ -87,17 +68,30 @@ services:
     volumes:
       - staticfiles:/staticfiles
     depends_on:
+      pgbouncer:
+        condition: service_healthy
       db:
         condition: service_healthy
     links:
-      - db
+      - pgbouncer
       - redis
+
+  pgbouncer:
+    image: edoburu/pgbouncer
+    restart: always
+    volumes:
+      - ./pgbouncer:/etc/pgbouncer:ro
+    ports:
+      - 5432
+    environment:
+      - POSTGRES_PASSWORD=${NOM_DB_PASSWORD}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "localhost"]
 
   db:
     image: postgres:17.1
     volumes:
       - db-data:/var/lib/postgresql/data
-      - ./initdb/:/docker-entrypoint-initdb.d/:ro # Mount init scripts
     ports:
       - 5432
     environment:
@@ -123,6 +117,36 @@ services:
       retries: 5
       start_period: 5s
 
+  # This container and Dozzle provide a logging endpoint access over my personal tailnet,
+  # so that I can view the container logs on this host without ssh as needed.
+  tailscale-sidecar:
+    hostname: ${LOGGING_HOSTNAME:-nomnom-seattle2025-staging-logs}
+    volumes:
+      - tailscale-data:/var/lib/tailscale
+    devices:
+      - /dev/net/tun
+    cap_add: # Required for tailscale to work
+      - net_admin
+      - sys_module
+    environment:
+      - TS_SERVE_PORT=8080
+    image: ghcr.io/offbyone/sidecar:main
+
+  dozzle:
+    container_name: dozzle
+    image: amir20/dozzle:latest
+    network_mode: "service:tailscale-sidecar"
+    restart: unless-stopped
+    environment:
+      DOZZLE_HOSTNAME: "nomnom-seattle2025-staging-logs"
+      DOZZLE_AUTH_PROVIDER: forward-proxy
+      DOZZLE_AUTH_HEADER_USER: "Tailscale-User-Login"
+      DOZZLE_AUTH_HEADER_NAME: "Tailscale-User-Name"
+      DOZZLE_ENABLE_ACTIONS: "false"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
 volumes:
   db-data:
   staticfiles:
+  tailscale-data:

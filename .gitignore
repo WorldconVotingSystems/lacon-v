@@ -172,3 +172,4 @@ test-data*
 .env
 .env.docker
 .env.dockertest
+userlist.txt
