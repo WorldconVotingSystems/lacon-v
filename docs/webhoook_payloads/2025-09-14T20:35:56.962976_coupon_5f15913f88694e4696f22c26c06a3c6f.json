@@ -1,0 +1,39 @@
+{
+  "timestamp": "2025-09-14T20:35:56.962976",
+  "delivery_id": "5f15913f88694e4696f22c26c06a3c6f",
+  "event_type": "coupon",
+  "payload": {
+    "eventType": "coupon",
+    "accountId": 161522,
+    "data": {
+      "couponId": 1194845,
+      "formId": 921506,
+      "name": "Test",
+      "available": -1,
+      "redeemed": 8,
+      "voucher": false,
+      "currency": "USD",
+      "discounts": [
+        {
+          "distribute": false,
+          "perTicket": false,
+          "value": "100",
+          "valueType": "percent"
+        }
+      ],
+      "dateCreated": "2025-09-06T02:41:52Z",
+      "dateUpdated": "2025-09-14T20:25:58Z",
+      "codes": [
+        {
+          "id": 7879150,
+          "couponId": 1194845,
+          "code": "Test",
+          "redeemed": 8
+        }
+      ]
+    },
+    "meta": {
+      "name": "NomNom Devlopment"
+    }
+  }
+}

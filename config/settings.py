@@ -477,6 +477,11 @@ if DEBUG:
 # Seed data can come from here:
 FIXTURE_DIRS = [BASE_DIR / "seed"]
 
+# Regfox webhook settings
+REGFOX_WEBHOOK_SECRET = os.environ["REGFOX_WEBHOOK_SECRET"]
+# if this is set, log payloads to the directory.
+REGFOX_WEBHOOK_PAYLOAD_LOG_DIR = os.environ.get("REGFOX_WEBHOOK_PAYLOAD_LOG_DIR", None)
+
 try:
     from .settings_override import *  # noqa: F403
 except ImportError:

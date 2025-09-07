@@ -1,0 +1,150 @@
+{
+  "timestamp": "2025-09-14T19:33:53.076622",
+  "delivery_id": "38a2e42d0ebd40cb862c6ae5919b1d6e",
+  "event_type": "registration",
+  "payload": {
+    "eventType": "registration",
+    "accountId": 161522,
+    "formId": 921506,
+    "customerId": 33679633,
+    "eventId": 65573835,
+    "data": {
+      "id": "01K54VE32C44QX7FGNP",
+      "lookupId": 65573835,
+      "customerId": 33679633,
+      "billing": {
+        "address": {
+          "city": "Granada Hills",
+          "country": "US",
+          "postalCode": "91344",
+          "state": "CA",
+          "street1": "16835 Lahey St"
+        },
+        "card": {
+          "cardNumber": "VISA-0924",
+          "expMonth": 6,
+          "expYear": 2030
+        },
+        "check": {},
+        "email": "elaynepelz@gmail.com",
+        "name": {
+          "first": "Elayne",
+          "last": "Test"
+        },
+        "paymentMethod": "card"
+      },
+      "transactionId": 81486950,
+      "transactionReference": "da61fa20113841e5a6952781acdda176",
+      "orderStatus": "completed",
+      "orderNumber": "TSTPGFRHGSTSLLND0008",
+      "registrants": [
+        {
+          "id": "01K54VE32QN14MW5MVN",
+          "lookupId": 74676798,
+          "data": [
+            {
+              "key": "registrationOptions",
+              "label": "Registration Options",
+              "options": [
+                {
+                  "amount": "50",
+                  "discount": "0",
+                  "key": "option2",
+                  "label": "WSFS Membership",
+                  "price": "50",
+                  "type": "regOption",
+                  "value": true
+                }
+              ],
+              "type": "regOptions",
+              "value": "option2"
+            },
+            {
+              "first": {
+                "label": "First Name",
+                "type": "nameField",
+                "value": "Elayne"
+              },
+              "key": "name",
+              "label": "Name",
+              "last": {
+                "label": "Last Name",
+                "type": "nameField",
+                "value": "Test"
+              },
+              "type": "name"
+            },
+            {
+              "key": "email",
+              "label": "Email",
+              "type": "email",
+              "value": "elaynepelz@gmail.com"
+            },
+            {
+              "key": "phone",
+              "label": "Phone Number",
+              "optIn": false,
+              "phoneType": "MOBILE",
+              "type": "phone",
+              "value": "+18183663827"
+            },
+            {
+              "city": {
+                "label": "City",
+                "type": "textField",
+                "value": "Granada Hills"
+              },
+              "country": {
+                "label": "Country",
+                "type": "textField",
+                "value": "US"
+              },
+              "key": "address",
+              "label": "Address",
+              "postalCode": {
+                "label": "ZIP/Postal Code",
+                "type": "textField",
+                "value": "91344"
+              },
+              "state": {
+                "label": "State",
+                "type": "textField",
+                "value": "CA"
+              },
+              "street1": {
+                "label": "Street Address",
+                "type": "textField",
+                "value": "16835 Lahey St"
+              },
+              "type": "address"
+            },
+            {
+              "key": "couponCode",
+              "label": "Coupon Code",
+              "type": "couponCode",
+              "value": ""
+            },
+            {
+              "amount": "0",
+              "insured": "0",
+              "key": "purchaseProtection",
+              "label": "Purchase Protection",
+              "type": "purchaseProtection",
+              "value": false
+            }
+          ],
+          "amount": 50
+        }
+      ],
+      "registrationTimestamp": "2025-09-14T19:32:37Z",
+      "total": 50,
+      "formName": "Test Page for Hugo/Site Selection Testing",
+      "currency": "USD",
+      "deductibleTotal": 0
+    },
+    "meta": {
+      "name": "NomNom Devlopment"
+    },
+    "formMeta": {}
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "timestamp": "2025-09-14T21:25:10.943393",
+  "delivery_id": "ee2d0180d71b4da5b5b375c673ff9f48",
+  "event_type": "publish",
+  "payload": {
+    "eventType": "publish",
+    "accountId": 161522,
+    "formId": 921506,
+    "eventId": 712502,
+    "data": {
+      "id": 921506,
+      "lookupId": 921506,
+      "name": "Test Page for Hugo/Site Selection Testing",
+      "product": "regfox.com",
+      "accRef": "TSTPGFRHGSTSL",
+      "publishedPath": "scifiinc99.regfox.com/test-page-for-hugosite-selection-testing",
+      "status": "open",
+      "currency": "USD",
+      "eventStart": "2026-08-25T07:00:00Z",
+      "timeZone": "America/Los_Angeles",
+      "datePublished": "2025-09-14T21:24:08Z"
+    },
+    "meta": {
+      "name": "NomNom Devlopment"
+    }
+  }
+}
