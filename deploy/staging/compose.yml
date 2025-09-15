@@ -86,7 +86,7 @@ services:
     environment:
       - POSTGRES_PASSWORD=${NOM_DB_PASSWORD}
     healthcheck:
-      test: ["CMD", "pg_isready", "-h", "localhost"]
+      test: ["CMD", "pg_isready", "-h", "localhost", "-U nomnom_staging"]
 
   db:
     image: postgres:17.1
