@@ -29,7 +29,7 @@ urlpatterns = (
     [
         path("", nomnom.base.views.index, name="index"),
         path("e/", include("nomnom.nominate.urls", namespace="election")),
-        path("c/", include("nomnom.canonicalize.urls", namespace="canonicalize")),
+        path("e/", include("nomnom.canonicalize.urls", namespace="canonicalize")),
         path("lacon/", include("lacon_v_app.urls", namespace="convention")),
         path("admin/action-forms/", include("django_admin_action_forms.urls")),
         path("admin/", admin.site.urls),
