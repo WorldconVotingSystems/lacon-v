@@ -23,6 +23,23 @@ jobs:
     permissions: {}
     runs-on: ubuntu-latest
     steps:
+      - name: Debug workflow trigger
+        run: |
+          echo "=== WORKFLOW TRIGGER DEBUG ==="
+          echo "Event name: ${{ github.event_name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "SHA: ${{ github.sha }}"
+          echo ""
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "PR Details:"
+            echo "  Head repo: ${{ github.event.pull_request.head.repo.full_name }}"
+            echo "  Base repo: ${{ github.repository }}"
+            echo "  Is external PR: ${{ github.event.pull_request.head.repo.full_name != github.repository }}"
+          fi
+          echo "==============================="
+
       - name: set the build step environment
         run: |
           # what even the fuck is this.
@@ -32,19 +49,36 @@ jobs:
 
           # Default to allowing push
           echo "CAN_PUSH_IMAGES=true" >> "$GITHUB_ENV"
+          
+          echo "=== ENVIRONMENT SETUP ==="
+          echo "Registry: $REGISTRY"
+          echo "Original image name: $registry_image"
+          echo "Lowercase image name: ${registry_image,,}"
+          echo "Default push setting: true"
+          echo "=========================="
 
       - name: Check for push image permissions
         # if this is a pull request from another repository, then disable pushing
         if: github.event.pull_request.head.repo.full_name != github.repository && github.event_name == 'pull_request'
         run: |
+          echo "=== PUSH PERMISSION CHECK ==="
           echo "This is a pull request from an external repository. Disabling image push."
+          echo "Head repo: ${{ github.event.pull_request.head.repo.full_name }}"
+          echo "Base repo: ${{ github.repository }}"
+          echo "Setting CAN_PUSH_IMAGES=false"
           echo "CAN_PUSH_IMAGES=false" >> "$GITHUB_ENV"
+          echo "============================="
 
       - name: persist the push instruction
         id: persist
         run: |
+          echo "=== PERSISTING OUTPUTS ==="
+          echo "CAN_PUSH_IMAGES: $CAN_PUSH_IMAGES"
+          echo "REGISTRY_IMAGE_LC: $REGISTRY_IMAGE_LC"
+          echo ""
           echo "can_push_images=$CAN_PUSH_IMAGES" >> "$GITHUB_OUTPUT"
           echo "registry_image=$REGISTRY_IMAGE_LC" >> "$GITHUB_OUTPUT"
+          echo "=========================="
     outputs:
       can_push_images: ${{ steps.persist.outputs.can_push_images }}
       registry_image: ${{ steps.persist.outputs.registry_image }}
@@ -112,6 +146,17 @@ jobs:
             type=semver,pattern={{version}}
             type=sha
 
+      - name: Debug build environment
+        run: |
+          echo "=== BUILD DEBUG INFO ==="
+          echo "Platform: ${{ matrix.platform }}"
+          echo "Platform pair: $PLATFORM_PAIR"
+          echo "Registry image: $REGISTRY_IMAGE"
+          echo "Can push images: $CAN_PUSH_IMAGES"
+          echo "Docker metadata tags: ${{ steps.meta.outputs.tags }}"
+          echo "Docker metadata labels: ${{ steps.meta.outputs.labels }}"
+          echo "========================"
+
       - name: Build and push by digest
         id: build
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
@@ -124,13 +169,48 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Debug build results
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          IMAGE_ID: ${{ steps.build.outputs.imageid }}
+          METADATA: ${{ steps.build.outputs.metadata }}
+        run: |
+          echo "=== BUILD RESULTS DEBUG ==="
+          echo "Image digest: $IMAGE_DIGEST"
+          echo "Image ID: $IMAGE_ID"
+          echo "Build metadata: $METADATA"
+          echo "Platform: ${{ matrix.platform }}"
+          echo "Platform pair: $PLATFORM_PAIR"
+          echo "============================"
+
       - name: Export digest
         env:
           IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
         run: |
+          echo "=== DIGEST EXPORT DEBUG ==="
+          echo "Exporting digest: $IMAGE_DIGEST"
+          echo "Platform: ${{ matrix.platform }}"
+          echo "Platform pair: $PLATFORM_PAIR"
+          
           mkdir -p /tmp/digests
           digest="$IMAGE_DIGEST"
-          touch "/tmp/digests/${digest#sha256:}"
+          digest_file="/tmp/digests/${digest#sha256:}"
+          touch "$digest_file"
+          
+          echo "Created digest file: $digest_file"
+          echo "Digest file contents:"
+          ls -la /tmp/digests/
+          echo "=========================="
+
+      - name: Debug artifact upload
+        run: |
+          echo "=== ARTIFACT UPLOAD DEBUG ==="
+          echo "Platform: ${{ matrix.platform }}"
+          echo "Platform pair: $PLATFORM_PAIR"
+          echo "Artifact name: digests-$PLATFORM_PAIR"
+          echo "Digest files to upload:"
+          find /tmp/digests -type f -exec basename {} \; | sort
+          echo "============================="
 
       - name: Upload digest
         uses: actions/upload-artifact@v4
@@ -155,12 +235,35 @@ jobs:
       REGISTRY_IMAGE: ${{ needs.prepare.outputs.registry_image }}
 
     steps:
+      - name: Debug merge environment
+        run: |
+          echo "=== MERGE JOB DEBUG INFO ==="
+          echo "Registry image: $REGISTRY_IMAGE"
+          echo "Can push images: $CAN_PUSH_IMAGES"
+          echo "Github event: ${{ github.event_name }}"
+          echo "Github ref: ${{ github.ref }}"
+          echo "Github actor: ${{ github.actor }}"
+          echo "============================="
+
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
           path: /tmp/digests
           pattern: digests-*
           merge-multiple: true
+
+      - name: Debug downloaded artifacts
+        run: |
+          echo "=== DOWNLOADED ARTIFACTS DEBUG ==="
+          echo "Contents of /tmp/digests:"
+          ls -la /tmp/digests/
+          echo ""
+          echo "Digest files found:"
+          find /tmp/digests -type f -exec echo "File: {} ($(basename {}))" \;
+          echo ""
+          echo "Total digest files: $(find /tmp/digests -type f | wc -l)"
+          echo "Expected platforms: linux/amd64, linux/arm64"
+          echo "===================================="
 
       - name: Login to Docker Hub
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
@@ -178,16 +281,92 @@ jobs:
         with:
           images: ${{ env.REGISTRY_IMAGE }}
 
+      - name: Debug docker metadata
+        env:
+          DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
+          DOCKER_METADATA_OUTPUT_TAGS: ${{ steps.meta.outputs.tags }}
+          DOCKER_METADATA_OUTPUT_VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          echo "=== DOCKER METADATA DEBUG ==="
+          echo "Tags: $DOCKER_METADATA_OUTPUT_TAGS"
+          echo "Version: $DOCKER_METADATA_OUTPUT_VERSION"
+          echo "JSON metadata:"
+          echo "$DOCKER_METADATA_OUTPUT_JSON" | jq '.'
+          echo ""
+          echo "Parsed tags for manifest creation:"
+          echo "$DOCKER_METADATA_OUTPUT_JSON" | jq -cr '.tags | map("-t " + .) | join(" ")'
+          echo "============================="
+
+      - name: Prepare manifest creation command
+        working-directory: /tmp/digests
+        run: |
+          echo "=== MANIFEST CREATION PREP ==="
+          echo "Building manifest creation command..."
+          
+          # Show what digest files we have
+          echo "Available digest files:"
+          ls -la
+          
+          # Build the digest references
+          echo ""
+          echo "Digest references that will be used:"
+          for digest_file in *; do
+            echo "  $REGISTRY_IMAGE@sha256:$digest_file"
+          done
+          
+          # Show the complete command that will be run
+          echo ""
+          echo "Complete manifest creation command:"
+          tags_args=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          digest_refs=$(ls | xargs -I {} echo "$REGISTRY_IMAGE@sha256:{}")
+          echo "docker buildx imagetools create $tags_args $digest_refs"
+          echo "============================="
+
       - name: Create manifest list and push
         working-directory: /tmp/digests
         if: ${{ env.CAN_PUSH_IMAGES }}
         run: |
-          docker buildx imagetools create \
-              "$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")" \
-              "$(printf "$REGISTRY_IMAGE@sha256:%s " *)"
+          echo "=== CREATING MANIFEST LIST ==="
+          
+          # Build and execute the command with debug output
+          tags_args=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          digest_refs=$(ls | xargs -I {} echo "$REGISTRY_IMAGE@sha256:{}")
+          
+          echo "Tags arguments: $tags_args"
+          echo "Digest references: $digest_refs"
+          echo ""
+          echo "Executing manifest creation..."
+          
+          docker buildx imagetools create $tags_args $digest_refs
+          
+          echo "Manifest creation completed successfully!"
+          echo "==============================="
 
       - name: Inspect image
         env:
           IMAGE_VERSION: ${{ steps.meta.outputs.version }}
         run: |
+          echo "=== IMAGE INSPECTION ==="
+          echo "Inspecting image: ${REGISTRY_IMAGE}:${IMAGE_VERSION}"
+          echo ""
+          
           docker buildx imagetools inspect "${REGISTRY_IMAGE}:${IMAGE_VERSION}"
+          
+          echo ""
+          echo "Image inspection completed!"
+          echo "========================="
+
+      - name: Final debug summary
+        env:
+          IMAGE_VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          echo "=== FINAL DEBUG SUMMARY ==="
+          echo "✅ Workflow completed successfully!"
+          echo "Registry: ${{ env.REGISTRY }}"
+          echo "Image: ${REGISTRY_IMAGE}:${IMAGE_VERSION}"
+          echo "Platforms built: linux/amd64, linux/arm64"
+          echo "Push enabled: $CAN_PUSH_IMAGES"
+          echo ""
+          echo "If you're seeing this message, the multi-arch image"
+          echo "was created and pushed successfully!"
+          echo "============================"
