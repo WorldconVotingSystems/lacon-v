@@ -49,7 +49,7 @@ jobs:
 
           # Default to allowing push
           echo "CAN_PUSH_IMAGES=true" >> "$GITHUB_ENV"
-          
+
           echo "=== ENVIRONMENT SETUP ==="
           echo "Registry: $REGISTRY"
           echo "Original image name: $registry_image"
@@ -191,12 +191,12 @@ jobs:
           echo "Exporting digest: $IMAGE_DIGEST"
           echo "Platform: ${{ matrix.platform }}"
           echo "Platform pair: $PLATFORM_PAIR"
-          
+
           mkdir -p /tmp/digests
           digest="$IMAGE_DIGEST"
           digest_file="/tmp/digests/${digest#sha256:}"
           touch "$digest_file"
-          
+
           echo "Created digest file: $digest_file"
           echo "Digest file contents:"
           ls -la /tmp/digests/
@@ -302,18 +302,18 @@ jobs:
         run: |
           echo "=== MANIFEST CREATION PREP ==="
           echo "Building manifest creation command..."
-          
+
           # Show what digest files we have
           echo "Available digest files:"
           ls -la
-          
+
           # Build the digest references
           echo ""
           echo "Digest references that will be used:"
           for digest_file in *; do
             echo "  $REGISTRY_IMAGE@sha256:$digest_file"
           done
-          
+
           # Show the complete command that will be run
           echo ""
           echo "Complete manifest creation command:"
@@ -327,18 +327,18 @@ jobs:
         if: ${{ env.CAN_PUSH_IMAGES }}
         run: |
           echo "=== CREATING MANIFEST LIST ==="
-          
+
           # Build and execute the command with debug output
           tags_args=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
           digest_refs=$(ls | xargs -I {} echo "$REGISTRY_IMAGE@sha256:{}")
-          
+
           echo "Tags arguments: $tags_args"
           echo "Digest references: $digest_refs"
           echo ""
           echo "Executing manifest creation..."
-          
+
           docker buildx imagetools create $tags_args $digest_refs
-          
+
           echo "Manifest creation completed successfully!"
           echo "==============================="
 
@@ -349,9 +349,9 @@ jobs:
           echo "=== IMAGE INSPECTION ==="
           echo "Inspecting image: ${REGISTRY_IMAGE}:${IMAGE_VERSION}"
           echo ""
-          
+
           docker buildx imagetools inspect "${REGISTRY_IMAGE}:${IMAGE_VERSION}"
-          
+
           echo ""
           echo "Image inspection completed!"
           echo "========================="
