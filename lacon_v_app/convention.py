@@ -7,12 +7,14 @@ from nomnom.convention import (
 
 theme = ConventionTheme(
     stylesheets="css/lacon-v.css",
-    font_urls=[],
+    font_urls=[
+        "https://fonts.googleapis.com/css2?family=Poppins&family=Nunito%20Sans&display=swap",
+    ],
 )
 
 convention = ConventionConfiguration(
     name="LAcon V",
-    subtitle="Convention Subtitle (in lacon_v_app/convention.py)",
+    subtitle="The New Frontier",
     slug="lacon-v",
     site_url="https://www.lacon.org",
     nomination_eligibility_cutoff=datetime(2024, 2, 1, 0, 0, 0, tzinfo=timezone.utc),
