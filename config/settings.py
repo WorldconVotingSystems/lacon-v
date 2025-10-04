@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     # debug helper
     "django_extensions",
     "django_browser_reload",
+    "debug_toolbar",
     # to render markdown to HTML in templates
     "markdownify.apps.MarkdownifyConfig",
     # OAuth login
@@ -117,6 +118,7 @@ AUTHENTICATION_BACKENDS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
