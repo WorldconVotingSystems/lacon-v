@@ -59,6 +59,9 @@ startdb:
 migrate:
     uv run manage.py migrate
 
+collectstatic:
+    uv run manage.py collectstatic --noinput
+
 initdb: startdb migrate
 
 seed:
