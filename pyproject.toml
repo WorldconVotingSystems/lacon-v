@@ -21,6 +21,7 @@ known-first-party = ["", "lacon_v_app"]
 dev = [
     "djlint>=1.36.4",
     "factory-boy~=3.3.0",
+    "nomnom-hugoawards",
     "pytest~=8.3.3",
     "pytest-django~=4.9.0",
 ]
@@ -42,4 +43,4 @@ build-backend = "hatchling.build"
 packages = ["config", "lacon_v_app"]
 
 [tool.uv.sources]
-nomnom-hugoawards = { path = "../nomnom" }
+nomnom-hugoawards = { path = "../nomnom", editable = true }

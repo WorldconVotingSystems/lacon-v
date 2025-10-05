@@ -103,7 +103,7 @@ INSTALLED_APPS = [
     "nomnom.nominate",
     "nomnom.canonicalize",
     # Consultative Votes
-    "nomnom.advise",
+    # "nomnom.advise",
     # The hugo packet app
     "nomnom.hugopacket",
 ]

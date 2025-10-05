@@ -25,5 +25,5 @@ convention = ConventionConfiguration(
     logo="images/logo_withouttitle_transparent-300x293.png",
     logo_alt_text="LAcon V logo",
     urls_app_name="lacon_v_app",
-    advisory_votes_enabled=True,
+    advisory_votes_enabled=False,
 )

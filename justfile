@@ -77,6 +77,12 @@ seed:
 
 update: update-precommit update-gha update-uv
 
+refresh-nomnom:
+    # refresh nomnom, only. This is useful when you're working on nomnom itself,
+    # when we might have a source dependency on nomnom, but we want to bump the shipped
+    # version, possibly to a beta.
+    uv sync --no-sources --dev --prerelease=explicit --refresh -P nomnom-hugoawards
+
 @update-uv:
     uv sync --upgrade
 
