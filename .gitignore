@@ -173,3 +173,6 @@ test-data*
 .env.docker
 .env.dockertest
 userlist.txt
+
+# used to perform template updates from my source code instead of upstream
+.copier-answers.local.yml
