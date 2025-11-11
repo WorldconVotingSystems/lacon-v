@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
 WORKING_DIR=$(
-    sudo docker inspect seattle-2025-web-1 |
+    sudo docker inspect lacon-v-web-1 |
         jq -r '.[0].Config.Labels["com.docker.compose.project.working_dir"]'
 )
 
 COMPOSE_FILE=$(
-    sudo docker inspect seattle-2025-web-1 |
+    sudo docker inspect lacon-v-web-1 |
         jq -r '.[0].Config.Labels["com.docker.compose.project.config_files"]'
 )
 
