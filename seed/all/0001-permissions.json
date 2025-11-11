@@ -18,15 +18,6 @@
         "fields": {
             "name": "WSFS Administrator",
             "permissions": [
-                ["add_proposal", "advise", "proposal"],
-                ["change_proposal", "advise", "proposal"],
-                ["delete_proposal", "advise", "proposal"],
-                ["view_proposal", "advise", "proposal"],
-                ["view_vote", "advise", "vote"],
-                ["add_voteadmindata", "advise", "voteadmindata"],
-                ["change_voteadmindata", "advise", "voteadmindata"],
-                ["delete_voteadmindata", "advise", "voteadmindata"],
-                ["view_voteadmindata", "advise", "voteadmindata"],
                 ["change_user", "auth", "user"],
                 ["delete_user", "auth", "user"],
                 ["view_user", "auth", "user"],
@@ -211,24 +202,6 @@
         "fields": {
             "name": "Preview Packet",
             "permissions": [["preview_packet", "hugopacket", "electionpacket"]]
-        }
-    },
-    {
-        "model": "auth.group",
-        "fields": {
-            "name": "WSFS Business Meeting Admin",
-            "permissions": [
-                ["add_proposal", "advise", "proposal"],
-                ["can_preview", "advise", "proposal"],
-                ["change_proposal", "advise", "proposal"],
-                ["delete_proposal", "advise", "proposal"],
-                ["view_proposal", "advise", "proposal"],
-                ["view_vote", "advise", "vote"],
-                ["add_voteadmindata", "advise", "voteadmindata"],
-                ["change_voteadmindata", "advise", "voteadmindata"],
-                ["delete_voteadmindata", "advise", "voteadmindata"],
-                ["view_voteadmindata", "advise", "voteadmindata"]
-            ]
         }
     }
 ]

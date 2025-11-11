@@ -1,0 +1,22 @@
+{
+  "access_token": "BOGON",
+  "email": "chris.rose@lacon.org",
+  "email_verified": false,
+  "expires_in": 300,
+  "given_name": "Chris Rose",
+  "groups": [],
+  "hugos-can-nominate": true,
+  "hugos-can-vote": false,
+  "id_token": "BOGON",
+  "is-in-person": false,
+  "membership-type": "Unknown",
+  "name": "Chris Rose",
+  "nickname": "rose.admin",
+  "nonce": "BOGON",
+  "preferred_username": "rose.admin",
+  "reg-id": "test-chrisrose.staging.id",
+  "scope": "profile email membership openid",
+  "site-selection-can-vote": false,
+  "sub": "BOGON",
+  "token_type": "Bearer"
+}

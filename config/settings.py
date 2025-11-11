@@ -11,6 +11,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 import bleach.sanitizer
@@ -19,18 +20,52 @@ import djp
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# import the system configuration from the application
-from nomnom.convention import system_configuration as cfg
+# Ensure logs directory exists
+LOGS_DIR = BASE_DIR / ".local" / "logs"
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+# Environment variable helpers
+def get_string(key, default=None):
+    return os.environ.get(key, default)
+
+
+def get_required_string(key):
+    return os.environ[key]
+
+
+def get_int(key, default=None):
+    value = os.environ.get(key, default)
+    return int(value) if value is not None else None
+
+
+def get_bool(key, default=False):
+    return os.environ.get(key, str(default)).lower() in ("true", "1", "yes")
+
+
+def get_string_list(key, default=None):
+    return (
+        os.environ.get(key, "").split(",") if os.environ.get(key) else (default or [])
+    )
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = cfg.secret_key
+SECRET_KEY = get_required_string("NOM_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = cfg.debug
-TEMPLATE_DEBUG = cfg.debug
+DEBUG = get_bool("NOM_DEBUG")
+TEMPLATE_DEBUG = DEBUG
+
+if DEBUG:
+    try:
+        from icecream import install as install_icecream
+
+        install_icecream()
+    except ImportError:
+        ...
 
 
 class InvalidStringShowWarning(str):
@@ -48,7 +83,7 @@ class InvalidStringShowWarning(str):
         return False
 
 
-ALLOWED_HOSTS = cfg.allowed_hosts
+ALLOWED_HOSTS = get_string_list("NOM_ALLOWED_HOSTS")
 
 CSRF_TRUSTED_ORIGINS = [f"https://{h}" for h in ALLOWED_HOSTS] if ALLOWED_HOSTS else []
 
@@ -110,13 +145,14 @@ INSTALLED_APPS = [
 
 SITE_ID = 1
 
-NOMNOM_ALLOW_USERNAME_LOGIN_FOR_MEMBERS = cfg.allow_username_login
+NOMNOM_ALLOW_USERNAME_LOGIN_FOR_MEMBERS = get_bool("NOM_ALLOW_USERNAME_LOGIN")
 
 AUTHENTICATION_BACKENDS = [
     # NOTE: the nomnom.nominate.apps.AppConfig.ready() hook will install handlers in this, as the first
     # set. Any handler in here will be superseded by those.
     #
     # Uncomment following if you want to access the admin
+    "lacon_v_app.auth.LaconMemberBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
 
@@ -168,11 +204,11 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": cfg.db.name,
-        "USER": cfg.db.user,
-        "PASSWORD": cfg.db.password,
-        "HOST": cfg.db.host,
-        "PORT": str(cfg.db.port),
+        "NAME": get_required_string("NOM_DB_NAME"),
+        "USER": get_required_string("NOM_DB_USER"),
+        "PASSWORD": get_required_string("NOM_DB_PASSWORD"),
+        "HOST": get_required_string("NOM_DB_HOST"),
+        "PORT": str(get_int("NOM_DB_PORT")),
         "DISABLE_SERVER_SIDE_CURSORS": True,
     }
 }
@@ -185,7 +221,7 @@ if not DEBUG:
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": f"redis://{cfg.redis.host}:{cfg.redis.port}",
+        "LOCATION": f"redis://{get_required_string('NOM_REDIS_HOST')}:{get_int('NOM_REDIS_PORT')}",
     },
 }
 
@@ -222,6 +258,13 @@ SOCIAL_AUTH_LOGIN_ERROR_URL = "election:login_error"
 
 SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = ["username", "first_name", "email"]
 
+SOCIAL_AUTH_LACON_KEY = get_required_string("NOM_OAUTH_CLIENT_ID")
+SOCIAL_AUTH_LACON_SECRET = get_required_string("NOM_OAUTH_CLIENT_SECRET")
+SOCIAL_AUTH_LACON_OIDC_ENDPOINT = get_string(
+    "NOM_AUTHENTIK_OIDC_ENDPOINT",
+    "https://auth.lacon.org/application/o/nom-nom-production",
+)
+
 # This is a probably-okay social auth pipeline, but you may need to adjust it for your needs.
 # See the social_django documentation for details.
 SOCIAL_AUTH_PIPELINE = [
@@ -229,15 +272,15 @@ SOCIAL_AUTH_PIPELINE = [
     "social_core.pipeline.social_auth.social_uid",
     "social_core.pipeline.social_auth.auth_allowed",
     "social_core.pipeline.social_auth.social_user",
+    "lacon_v_app.auth.adapt_regid_to_username",
     "social_core.pipeline.user.get_username",
-    "social_core.pipeline.user.create_user",
+    "lacon_v_app.auth.adapt_personal_information",
+    "lacon_v_app.auth.create_user",
     "social_core.pipeline.social_auth.associate_user",
     "social_core.pipeline.social_auth.load_extra_data",
-    "social_core.pipeline.user.user_details",
-    "nomnom.nominate.social_auth.pipeline.get_wsfs_permissions",
+    "lacon_v_app.auth.get_wsfs_permissions",
+    "lacon_v_app.auth.set_member_details",
     "nomnom.nominate.social_auth.pipeline.set_user_wsfs_membership",
-    "nomnom.nominate.social_auth.pipeline.normalize_date_fields",
-    "nomnom.nominate.social_auth.pipeline.restrict_wsfs_permissions_by_date",
     "nomnom.nominate.social_auth.pipeline.add_election_permissions",
 ]
 # Internationalization
@@ -259,7 +302,7 @@ USE_X_FORWARDED_PORT = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = "static/"
-STATIC_ROOT = cfg.static_file_root
+STATIC_ROOT = get_string("NOM_STATIC_FILE_ROOT", "staticfiles")
 GOOGLE_FONTS_DIR = BASE_DIR / "lacon_v_app" / "static" / "google_fonts"
 STATICFILES_DIRS = [GOOGLE_FONTS_DIR]
 
@@ -271,7 +314,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Async tasks
 CELERY_RESULT_BACKEND = "django-db"
 CELERY_CACHE_BACKEND = "default"
-CELERY_BROKER_URL = f"redis://{cfg.redis.host}:{cfg.redis.port}"
+CELERY_BROKER_URL = (
+    f"redis://{get_required_string('NOM_REDIS_HOST')}:{get_int('NOM_REDIS_PORT')}"
+)
 CELERY_TIMEZONE = "America/Los_Angeles"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
@@ -329,11 +374,11 @@ GOOGLE_FONTS = [
 ]
 
 # Email
-EMAIL_HOST = cfg.email.host
-EMAIL_PORT = cfg.email.port
-EMAIL_HOST_USER = cfg.email.host_user
-EMAIL_HOST_PASSWORD = cfg.email.host_password
-EMAIL_USE_TLS = cfg.email.use_tls
+EMAIL_HOST = get_string("NOM_EMAIL_HOST")
+EMAIL_PORT = get_int("NOM_EMAIL_PORT")
+EMAIL_HOST_USER = get_string("NOM_EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = get_string("NOM_EMAIL_HOST_PASSWORD")
+EMAIL_USE_TLS = get_bool("NOM_EMAIL_USE_TLS")
 
 LOGGING = {
     "version": 1,
@@ -352,6 +397,10 @@ LOGGING = {
             "format": "{levelname} {message}",
             "style": "{",
         },
+        "file": {
+            "format": "{asctime} {levelname} {name} {message}",
+            "style": "{",
+        },
     },
     "handlers": {
         "console": {
@@ -365,23 +414,39 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "simple",
         },
+        "file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": LOGS_DIR / "serve.log",
+            "formatter": "file",
+        },
+    },
+    "root": {
+        "level": "INFO",
+        "handlers": ["console", "file"],
     },
     "loggers": {
         "django.db.backends": {
             "level": "DEBUG",
             "handlers": ["debug_console"],
+            "propagate": False,
+        },
+        "django": {
+            "level": "INFO",
+            "handlers": ["console", "file"],
+            "propagate": False,
         },
     },
 }
 
 
 # Sentry
-if cfg.sentry_sdk.dsn is not None:
+if get_string("NOM_SENTRY_SDK_DSN"):
     # settings.py
     import sentry_sdk
 
     sentry_sdk.init(
-        dsn=cfg.sentry_sdk.dsn,
+        dsn=get_required_string("NOM_SENTRY_SDK_DSN"),
         # Set traces_sample_rate to 1.0 to capture 100%
         # of transactions for performance monitoring.
         traces_sample_rate=1.0,
@@ -390,12 +455,12 @@ if cfg.sentry_sdk.dsn is not None:
         # We recommend adjusting this value in production.
         profiles_sample_rate=1.0,
         # Our environment
-        environment=cfg.sentry_sdk.environment,
+        environment=get_string("NOM_SENTRY_SDK_ENVIRONMENT", "development"),
         # include the user and client IP
         send_default_pii=True,
     )
 
-if cfg.debug:
+if DEBUG:
     try:
         import icecream
 
@@ -404,7 +469,7 @@ if cfg.debug:
         # it's a nice-to-have, not a need-to-have
         pass
 
-if cfg.debug:
+if DEBUG:
     INTERNAL_IPS = [
         "127.0.0.1",
     ]

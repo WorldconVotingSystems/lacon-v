@@ -7,6 +7,7 @@ serve_host := if env_var_or_default("CODESPACES", "false") == "true" { "0.0.0.0"
 @default:
     just --list
 
+# Completely bootstrap a development environment
 bootstrap:
     #!/usr/bin/env bash
     set -eu -o pipefail
@@ -32,11 +33,9 @@ bootstrap:
 serve:
     uv run manage.py runserver {{ serve_host }}:$DEV_SERVER_PORT
 
+# Run the background task worker
 worker:
     uv run celery -A nomnom worker -l INFO
-
-serve-docs:
-    uv run mkdocs serve -f docs/mkdocs.yml
 
 # Format code with ruff
 format:
@@ -54,6 +53,10 @@ lint-fix:
 test:
     uv run pytest -v
 
+# Run tests every time a file changes
+guard:
+    uv run pytest -v --looponfail
+
 # Run all quality checks
 check: lint test
 
@@ -63,18 +66,22 @@ build-stack:
 stack:
     docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 
+# Run a shell in the full docker stack
 stack-shell:
     docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm web python manage.py shell
 
+# Open the mailcatcher web interface
 stack-mailcatcher:
     open http://$(docker compose port mailcatcher 1080)
 
+# Flush the development database
 resetdb:
     docker compose down -v
 
 startdb:
     docker compose up -d db redis
 
+# Re-run all DB migrations against the database
 migrate:
     uv run manage.py migrate
 
@@ -83,6 +90,7 @@ collectstatic:
 
 initdb: startdb migrate
 
+# initialize the database with production and development seed data
 seed:
     #!/usr/bin/env bash
     set -eu -o pipefail
@@ -94,10 +102,13 @@ seed:
         uv run manage.py loaddata $seed_file
     done
 
+# update dependencies
 update: update-precommit update-gha update-uv
 
+
+# refresh nomnom, only
 refresh-nomnom:
-    # refresh nomnom, only. This is useful when you're working on nomnom itself,
+    # This is useful when you're working on nomnom itself,
     # when we might have a source dependency on nomnom, but we want to bump the shipped
     # version, possibly to a beta.
     uv sync --no-sources --dev --prerelease=if-necessary-or-explicit --refresh -P nomnom-hugoawards
@@ -110,7 +121,6 @@ refresh-nomnom:
 
 @update-gha:
     uvx gha-update
-
 
 @db_data:
     mkdir -p "{{ justfile_directory() }}/data/"
