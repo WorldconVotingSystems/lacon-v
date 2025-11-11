@@ -1,0 +1,604 @@
+import pytest
+from django.contrib.auth import get_user_model
+from faker import Faker
+from social_core.tests.models import TestStorage
+from social_core.tests.strategy import TestStrategy
+
+from lacon_v_app.auth import (
+    adapt_personal_information,
+    adapt_regid_to_username,
+    create_user,
+    get_wsfs_permissions,
+    set_member_details,
+    store_full_membership_data,
+)
+
+User = get_user_model()
+fake = Faker()
+
+
+@pytest.fixture
+def mock_strategy():
+    """Mock social auth strategy"""
+    return TestStrategy(storage=TestStorage())
+
+
+@pytest.fixture
+def test_user(db):
+    """Create a test user using the actual Django User model"""
+    return User.objects.create_user(
+        username=fake.user_name(),
+        email=fake.email(),
+        first_name=fake.first_name(),
+        last_name=fake.last_name(),
+    )
+
+
+def generate_auth_response(
+    has_admin_group=False,
+    can_nominate=False,
+    can_vote=False,
+    can_site_selection_vote=False,
+    membership_type="Unknown",
+    is_in_person=False,
+    reg_id_format="standard",  # standard, hyphenated, dots, short
+    use_preferred_name=True,
+    use_given_name=True,
+    use_nickname=True,
+):
+    """Generate a fake auth response with the specified parameters"""
+    base_response = {
+        "access_token": fake.uuid4(),
+        "email_verified": fake.boolean(),
+        "expires_in": fake.random_int(min=300, max=3600),
+        "id_token": fake.uuid4(),
+        "nonce": fake.uuid4(),
+        "scope": "profile email membership openid",
+        "sub": fake.uuid4(),
+        "token_type": "Bearer",
+        "email": fake.email(),
+        "hugos-can-nominate": can_nominate,
+        "hugos-can-vote": can_vote,
+        "site-selection-can-vote": can_site_selection_vote,
+        "membership-type": membership_type,
+        "is-in-person": is_in_person,
+    }
+
+    # Generate groups
+    groups = []
+    if has_admin_group:
+        groups.append("App Admins")
+    # Add some random groups for variation
+    for _ in range(fake.random_int(min=0, max=3)):
+        groups.append(fake.word().title() + " Group")
+    base_response["groups"] = groups
+
+    # Generate reg-id in various formats
+    base_name = fake.user_name()
+    if reg_id_format == "standard":
+        base_response["reg-id"] = f"member-{fake.random_int(min=1000, max=99999)}"
+    elif reg_id_format == "hyphenated":
+        base_response["reg-id"] = f"test-{base_name}.staging.id"
+    elif reg_id_format == "dots":
+        base_response["reg-id"] = f"{base_name}.{fake.random_int(min=100, max=999)}.id"
+    elif reg_id_format == "short":
+        base_response["reg-id"] = f"{fake.random_int(min=100, max=999)}"
+
+    # Generate names
+    first_name = fake.first_name()
+    last_name = fake.last_name()
+
+    if use_preferred_name:
+        base_response["preferred_name"] = f"{first_name} {last_name}"
+
+    if use_given_name:
+        base_response["given_name"] = f"{first_name} {last_name}"
+        base_response["name"] = f"{first_name} {last_name}"
+
+    if use_nickname:
+        base_response["nickname"] = fake.user_name()
+        base_response["preferred_username"] = base_response["nickname"]
+
+    return base_response
+
+
+# Test parameter combinations
+ADMIN_PERMISSIONS = [True, False]
+admin_permissions_param = pytest.mark.parametrize(
+    "has_admin_group", ADMIN_PERMISSIONS, ids=["admin", "non_admin"]
+)
+
+HUGO_PERMISSIONS = [
+    (False, False),  # can't nominate, can't vote
+    (True, False),  # can nominate, can't vote
+    (False, True),  # can't nominate, can vote
+    (True, True),  # can nominate and vote
+]
+hugo_permissions_param = pytest.mark.parametrize(
+    "can_nominate,can_vote",
+    HUGO_PERMISSIONS,
+    ids=["none", "nominate_only", "vote_only", "both"],
+)
+
+MEMBERSHIP_TYPES = ["Unknown", "Adult", "Supporting", "Youth", "Child"]
+membership_type_param = pytest.mark.parametrize("membership_type", MEMBERSHIP_TYPES)
+
+REG_ID_FORMATS = ["standard", "hyphenated", "dots", "short"]
+reg_id_format_param = pytest.mark.parametrize("reg_id_format", REG_ID_FORMATS)
+
+NAME_VARIATIONS = [
+    (True, True, True),  # has preferred, given, nickname
+    (True, False, True),  # has preferred, no given, has nickname
+    (False, True, True),  # no preferred, has given, has nickname
+    (False, False, True),  # no preferred, no given, has nickname
+    (False, True, False),  # no preferred, has given, no nickname
+]
+name_variations_param = pytest.mark.parametrize(
+    "use_preferred,use_given,use_nickname",
+    NAME_VARIATIONS,
+    ids=["all_names", "no_given", "no_preferred", "only_nickname", "given_only"],
+)
+in_person_param = pytest.mark.parametrize(
+    "is_in_person", [True, False], ids=["in_person", "virtual"]
+)
+
+site_selection_param = pytest.mark.parametrize(
+    "can_site_vote", [True, False], ids=["can_site_vote", "cannot_site_vote"]
+)
+
+
+class TestAdaptRegidToUsername:
+    @reg_id_format_param
+    def test_extracts_regid_as_username_and_member_number(
+        self, mock_strategy, test_user, reg_id_format
+    ):
+        response = generate_auth_response(reg_id_format=reg_id_format)
+        details = {}
+
+        adapt_regid_to_username(mock_strategy, details, test_user, response=response)
+
+        assert details["username"] == response["reg-id"]
+        assert details["member_number"] == response["reg-id"]
+
+    def test_handles_missing_regid(self, mock_strategy, test_user):
+        details = {}
+        response = {"email": fake.email()}
+
+        adapt_regid_to_username(mock_strategy, details, test_user, response=response)
+
+        assert "username" not in details
+        assert "member_number" not in details
+
+    @reg_id_format_param
+    def test_preserves_existing_details(self, mock_strategy, test_user, reg_id_format):
+        response = generate_auth_response(reg_id_format=reg_id_format)
+        details = {"existing_field": "preserved"}
+
+        adapt_regid_to_username(mock_strategy, details, test_user, response=response)
+
+        assert details["existing_field"] == "preserved"
+        assert details["username"] == response["reg-id"]
+
+
+class TestGetWsfsPermissions:
+    @hugo_permissions_param
+    def test_extracts_hugo_permissions(
+        self, mock_strategy, test_user, can_nominate, can_vote
+    ):
+        response = generate_auth_response(can_nominate=can_nominate, can_vote=can_vote)
+        details = {}
+
+        get_wsfs_permissions(mock_strategy, details, test_user, response=response)
+
+        assert details["can_nominate"] is can_nominate
+        assert details["can_vote"] is can_vote
+
+    @site_selection_param
+    def test_extracts_site_selection_permissions(
+        self, mock_strategy, test_user, can_site_vote
+    ):
+        response = generate_auth_response(can_site_selection_vote=can_site_vote)
+        details = {}
+
+        get_wsfs_permissions(mock_strategy, details, test_user, response=response)
+
+        assert details["site_selection_can_vote"] is can_site_vote
+
+    @admin_permissions_param
+    def test_detects_admin_group(self, mock_strategy, test_user, has_admin_group):
+        response = generate_auth_response(has_admin_group=has_admin_group)
+        details = {}
+
+        get_wsfs_permissions(mock_strategy, details, test_user, response=response)
+
+        assert details["is_admin"] is has_admin_group
+
+    def test_handles_missing_permissions(self, mock_strategy, test_user):
+        details = {}
+        response = {"email": fake.email()}
+
+        get_wsfs_permissions(mock_strategy, details, test_user, response=response)
+
+        assert details["can_nominate"] is False
+        assert details["can_vote"] is False
+        assert details["site_selection_can_vote"] is False
+        assert details["is_admin"] is False
+
+
+class TestAdaptPersonalInformation:
+    @name_variations_param
+    def test_name_handling_variations(
+        self, mock_strategy, test_user, use_preferred, use_given, use_nickname
+    ):
+        response = generate_auth_response(
+            use_preferred_name=use_preferred,
+            use_given_name=use_given,
+            use_nickname=use_nickname,
+        )
+        details = {}
+
+        adapt_personal_information(mock_strategy, details, test_user, response=response)
+
+        # Test that we get some kind of name
+        if use_preferred:
+            expected_name = response["preferred_name"]
+            name_parts = expected_name.split()
+            assert details["first_name"] == name_parts[0]
+            if len(name_parts) > 1:
+                assert details["last_name"] == " ".join(name_parts[1:])
+            assert details["preferred_name"] == expected_name
+        elif use_given:
+            expected_name = response["given_name"]
+            name_parts = expected_name.split()
+            assert details["first_name"] == name_parts[0]
+            if len(name_parts) > 1:
+                assert details["last_name"] == " ".join(name_parts[1:])
+            assert details["preferred_name"] == expected_name
+        elif use_nickname:
+            assert details["first_name"] == response["nickname"]
+            assert details["preferred_name"] == response["nickname"]
+
+    @membership_type_param
+    @in_person_param
+    def test_maps_membership_info(
+        self, mock_strategy, test_user, membership_type, is_in_person
+    ):
+        response = generate_auth_response(
+            membership_type=membership_type, is_in_person=is_in_person
+        )
+        details = {}
+
+        adapt_personal_information(mock_strategy, details, test_user, response=response)
+
+        assert details["membership_type"] == membership_type
+        assert details["is_in_person"] is is_in_person
+
+    def test_maps_email(self, mock_strategy, test_user):
+        response = generate_auth_response()
+        details = {}
+
+        adapt_personal_information(mock_strategy, details, test_user, response=response)
+
+        assert details["email"] == response["email"]
+
+    def test_handles_missing_fields(self, mock_strategy, test_user):
+        details = {}
+        response = {}
+
+        adapt_personal_information(mock_strategy, details, test_user, response=response)
+
+        assert "first_name" not in details
+        assert "email" not in details
+        assert details["membership_type"] is None
+        assert details["is_in_person"] is False
+
+
+class TestStoreFullMembershipData:
+    def test_stores_complete_response(self, mock_strategy, test_user):
+        response = generate_auth_response()
+        details = {}
+
+        store_full_membership_data(mock_strategy, details, test_user, response=response)
+
+        assert details["full_response"] == response
+        assert details["full_response"]["reg-id"] == response["reg-id"]
+        assert details["full_response"]["email"] == response["email"]
+
+    def test_creates_copy_not_reference(self, mock_strategy, test_user):
+        response = generate_auth_response()
+        details = {}
+
+        store_full_membership_data(mock_strategy, details, test_user, response=response)
+
+        # Modify original response
+        response["new_field"] = "added"
+
+        # Stored copy should not be affected
+        assert "new_field" not in details["full_response"]
+
+    def test_handles_empty_response(self, mock_strategy, test_user):
+        details = {}
+        response = {}
+
+        store_full_membership_data(mock_strategy, details, test_user, response=response)
+
+        assert details["full_response"] == {}
+
+
+class TestPipelineIntegration:
+    @admin_permissions_param
+    @hugo_permissions_param
+    @membership_type_param
+    @reg_id_format_param
+    def test_full_pipeline_variations(
+        self,
+        mock_strategy,
+        test_user,
+        has_admin_group,
+        can_nominate,
+        can_vote,
+        membership_type,
+        reg_id_format,
+    ):
+        """Test running all pipeline functions with various parameter combinations"""
+        response = generate_auth_response(
+            has_admin_group=has_admin_group,
+            can_nominate=can_nominate,
+            can_vote=can_vote,
+            membership_type=membership_type,
+            reg_id_format=reg_id_format,
+        )
+        details = {}
+
+        # Run pipeline functions in order
+        adapt_regid_to_username(mock_strategy, details, test_user, response=response)
+        get_wsfs_permissions(mock_strategy, details, test_user, response=response)
+        adapt_personal_information(mock_strategy, details, test_user, response=response)
+        store_full_membership_data(mock_strategy, details, test_user, response=response)
+
+        # Verify all expected fields are set
+        assert details["username"] == response["reg-id"]
+        assert details["member_number"] == response["reg-id"]
+        assert details["can_nominate"] is can_nominate
+        assert details["can_vote"] is can_vote
+        assert details["is_admin"] is has_admin_group
+        assert details["membership_type"] == membership_type
+        assert details["full_response"] == response
+
+        # Verify name fields are populated
+        assert "first_name" in details
+        assert "preferred_name" in details
+        assert "email" in details
+
+    def test_pipeline_preserves_order_independence(self, mock_strategy, test_user):
+        """Test that pipeline functions don't interfere with each other"""
+        response = generate_auth_response()
+        details1 = {}
+        details2 = {}
+
+        # Run in different orders
+        adapt_regid_to_username(mock_strategy, details1, test_user, response=response)
+        adapt_personal_information(
+            mock_strategy, details1, test_user, response=response
+        )
+        get_wsfs_permissions(mock_strategy, details1, test_user, response=response)
+
+        get_wsfs_permissions(mock_strategy, details2, test_user, response=response)
+        adapt_regid_to_username(mock_strategy, details2, test_user, response=response)
+        adapt_personal_information(
+            mock_strategy, details2, test_user, response=response
+        )
+
+        # Results should be identical regardless of order
+        for key in ["username", "can_nominate", "first_name", "email"]:
+            assert details1[key] == details2[key]
+
+
+class TestCreateUser:
+    @reg_id_format_param
+    def test_creates_new_user_with_pipeline_data(
+        self, mock_strategy, db, reg_id_format
+    ):
+        """Test creating a new user with data from pipeline functions"""
+        response = generate_auth_response(reg_id_format=reg_id_format)
+        details = {}
+
+        # Run pipeline functions to populate details
+        adapt_regid_to_username(mock_strategy, details, None, response=response)
+        adapt_personal_information(mock_strategy, details, None, response=response)
+
+        # Now create user with pipeline data
+        result = create_user(mock_strategy, details, user=None, response=response)
+
+        assert result["is_new"] is True
+        user = result["user"]
+        assert user.username == response["reg-id"]
+        assert user.email == response["email"]
+        assert "first_name" in details
+
+    def test_creates_user_with_partial_fields(self, mock_strategy, db):
+        """Test creating a user when some fields are missing"""
+        details = {
+            "username": fake.user_name(),
+            "email": fake.email(),
+            "first_name": fake.first_name(),
+            # last_name is missing
+        }
+        response = {}
+
+        result = create_user(mock_strategy, details, user=None, response=response)
+
+        assert result["is_new"] is True
+        user = result["user"]
+        assert user.username == details["username"]
+        assert user.email == details["email"]
+        assert user.first_name == details["first_name"]
+        assert user.last_name == ""  # should default to empty string
+
+    def test_handles_empty_email(self, mock_strategy, db):
+        """Test creating a user with empty email"""
+        details = {
+            "username": fake.user_name(),
+            "first_name": fake.first_name(),
+            "last_name": fake.last_name(),
+        }
+        response = {}
+
+        result = create_user(mock_strategy, details, user=None, response=response)
+
+        assert result["is_new"] is True
+        user = result["user"]
+        assert user.username == details["username"]
+        assert user.email == ""
+
+    def test_returns_existing_user_without_creating_new_one(
+        self, mock_strategy, test_user
+    ):
+        """Test that if user already exists, it returns the existing user"""
+        details = {
+            "username": fake.user_name(),
+            "email": fake.email(),
+        }
+        response = {}
+
+        result = create_user(mock_strategy, details, user=test_user, response=response)
+
+        assert result["user"] == test_user
+        assert "is_new" not in result
+
+    def test_filters_out_none_values(self, mock_strategy, db):
+        """Test that None values are filtered out to avoid validation errors"""
+        details = {
+            "username": fake.user_name(),
+            "email": None,  # This should be filtered out
+            "first_name": fake.first_name(),
+            "last_name": None,  # This should be filtered out
+        }
+        response = {}
+
+        result = create_user(mock_strategy, details, user=None, response=response)
+
+        assert result["is_new"] is True
+        user = result["user"]
+        assert user.username == details["username"]
+        assert user.first_name == details["first_name"]
+        # None values should not cause issues
+
+    def test_with_missing_username(self, mock_strategy, db):
+        """Test behavior when username is missing"""
+        email = fake.email()
+        details = {
+            "email": email,
+            "first_name": fake.first_name(),
+            "last_name": fake.last_name(),
+        }
+        response = {"email": email}
+
+        result = create_user(mock_strategy, details, user=None, response=response)
+
+        assert result["is_new"] is True
+        user = result["user"]
+        # Username should be generated from email when missing
+        assert user.username == f"user_{email}"
+        assert user.email == email
+
+    def test_with_missing_username_and_email(self, mock_strategy, db):
+        """Test behavior when both username and email are missing"""
+        details = {
+            "first_name": fake.first_name(),
+            "last_name": fake.last_name(),
+        }
+        response = {}
+
+        result = create_user(mock_strategy, details, user=None, response=response)
+
+        assert result["is_new"] is True
+        user = result["user"]
+        # Username should fallback to anonymous when no email available
+        assert user.username == "user_anonymous"
+        assert user.email == ""
+
+
+class TestSetMemberDetails:
+    def test_does_nothing_when_user_is_none(self, mock_strategy):
+        """Test that function returns early when user is None"""
+        details = {"preferred_name": fake.name()}
+        response = {}
+
+        # Should not raise any errors
+        result = set_member_details(
+            mock_strategy, details, user=None, response=response
+        )
+        assert result is None
+
+    @admin_permissions_param
+    def test_sets_admin_permissions(self, mock_strategy, test_user, has_admin_group):
+        """Test setting admin permissions on user"""
+        details = {
+            "is_admin": has_admin_group,
+            "member_number": fake.random_int(min=1000, max=9999),
+        }
+        response = {}
+
+        set_member_details(mock_strategy, details, user=test_user, response=response)
+
+        assert test_user.is_staff is has_admin_group
+
+    def test_handles_missing_admin_flag(self, mock_strategy, test_user):
+        """Test behavior when is_admin is not in details"""
+        details = {
+            "preferred_name": fake.name(),
+            "member_number": fake.random_int(min=1000, max=9999),
+        }
+        response = {}
+
+        # Store original values
+        original_staff = test_user.is_staff
+
+        set_member_details(mock_strategy, details, user=test_user, response=response)
+
+        # Values should remain unchanged
+        assert test_user.is_staff == original_staff
+
+    @admin_permissions_param
+    @hugo_permissions_param
+    def test_integration_with_full_pipeline(
+        self, mock_strategy, test_user, has_admin_group, can_nominate, can_vote
+    ):
+        """Test set_member_details with full pipeline data"""
+        response = generate_auth_response(
+            has_admin_group=has_admin_group,
+            can_nominate=can_nominate,
+            can_vote=can_vote,
+        )
+        details = {}
+
+        # Run pipeline functions to populate details
+        adapt_regid_to_username(mock_strategy, details, test_user, response=response)
+        get_wsfs_permissions(mock_strategy, details, test_user, response=response)
+        adapt_personal_information(mock_strategy, details, test_user, response=response)
+
+        # Now set member details
+        set_member_details(mock_strategy, details, user=test_user, response=response)
+
+        # Should set admin permissions based on response data
+        assert test_user.is_staff is has_admin_group
+
+        # Verify that user details include the voting/nominating permissions
+        assert details["can_nominate"] is can_nominate
+        assert details["can_vote"] is can_vote
+
+    def test_ignores_fields_not_on_user_model(self, mock_strategy, test_user):
+        """Test that fields not on user model are safely ignored"""
+        details = {
+            "preferred_name": fake.name(),
+            "member_number": fake.random_int(min=1000, max=9999),
+            "is_admin": True,  # This should still work for standard fields
+        }
+        response = {}
+
+        # Should not raise AttributeError even if user doesn't have custom fields
+        set_member_details(mock_strategy, details, user=test_user, response=response)
+
+        # Standard fields should still be set
+        assert test_user.is_staff is True

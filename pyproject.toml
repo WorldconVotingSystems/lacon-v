@@ -21,9 +21,12 @@ known-first-party = ["", "lacon_v_app"]
 dev = [
     "djlint>=1.36.4",
     "factory-boy~=3.3.0",
+    "faker>=37.6.0",
+    "icecream>=2.1.8",
     "nomnom-hugoawards",
     "pytest~=8.3.3",
     "pytest-django~=4.9.0",
+    "pytest-xdist>=3.8.0",
     "ruff>=0.14.4",
 ]
 

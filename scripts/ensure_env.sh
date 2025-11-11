@@ -24,8 +24,10 @@ NOM_REDIS_HOST=localhost
 NOM_REDIS_PORT=6379
 NOM_ALLOWED_HOSTS=127.0.0.1,localhost
 
-NOM_OAUTH_KEY=bogon
-NOM_OAUTH_SECRET=bogon
+NOM_OAUTH_CLIENT_ID=bogon
+NOM_OAUTH_CLIENT_SECRET=bogon
+# default to authentik staging's development app
+NOM_AUTHENTIK_OIDC_ENDPOINT=https://auth-staging.lacon.org/application/o/nom-nom-development
 
 NOM_EMAIL_HOST=localhost
 NOM_EMAIL_PORT=51025
