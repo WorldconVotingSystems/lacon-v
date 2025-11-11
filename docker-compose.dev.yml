@@ -1,5 +1,5 @@
 x-image: &image
-  image: ghcr.io/worldconvotingsystems/nomnom:dev
+  image: ghcr.io/laconorg/nomnom:dev
 x-boot: &boot
   depends_on:
     boot:

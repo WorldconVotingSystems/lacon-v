@@ -1,6 +1,6 @@
 name: "lacon-v"
 x-image: &image
-  image: ${NOMNOM_IMAGE:-ghcr.io/worldconvotingsystems/lacon-v}:${NOMNOM_VERSION:-main}
+  image: ${NOMNOM_IMAGE:-ghcr.io/laconorg/lacon-v}:${NOMNOM_VERSION:-main}
 x-boot: &boot
   depends_on:
     boot:
