@@ -65,7 +65,7 @@ cd /src
 uv sync \
     --no-editable \
     --no-sources \
-    --prerelease=explicit
+    --prerelease=if-necessary-or-explicit
 EOT
 
 # Copy in the Django stuff, too:

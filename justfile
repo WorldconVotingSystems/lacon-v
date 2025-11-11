@@ -38,6 +38,25 @@ worker:
 serve-docs:
     uv run mkdocs serve -f docs/mkdocs.yml
 
+# Format code with ruff
+format:
+    uv run ruff format .
+
+# Lint code with ruff
+lint:
+    uv run ruff check .
+
+# Fix linting issues automatically
+lint-fix:
+    uv run ruff check --fix .
+
+# Run tests
+test:
+    uv run pytest -v
+
+# Run all quality checks
+check: lint test
+
 build-stack:
     docker compose -f docker-compose.yml -f docker-compose.dev.yml build
 
@@ -81,7 +100,7 @@ refresh-nomnom:
     # refresh nomnom, only. This is useful when you're working on nomnom itself,
     # when we might have a source dependency on nomnom, but we want to bump the shipped
     # version, possibly to a beta.
-    uv sync --no-sources --dev --prerelease=explicit --refresh -P nomnom-hugoawards
+    uv sync --no-sources --dev --prerelease=if-necessary-or-explicit --refresh -P nomnom-hugoawards
 
 @update-uv:
     uv sync --upgrade
