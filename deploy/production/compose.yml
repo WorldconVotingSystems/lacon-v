@@ -137,7 +137,7 @@ services:
   # This container and Dozzle provide a logging endpoint access over my personal tailnet,
   # so that I can view the container logs on this host without ssh as needed.
   tailscale-sidecar:
-    hostname: nomnom-seattle2025-prod-logs
+    hostname: nomnom-lacon-prod-logs
     volumes:
       - tailscale-data:/var/lib/tailscale
     devices:
@@ -155,7 +155,7 @@ services:
     network_mode: "service:tailscale-sidecar"
     restart: unless-stopped
     environment:
-      DOZZLE_HOSTNAME: "nomnom-seattle2025-prod-logs"
+      DOZZLE_HOSTNAME: "nomnom-lacon-prod-logs"
       DOZZLE_AUTH_PROVIDER: forward-proxy
       DOZZLE_AUTH_HEADER_USER: "Tailscale-User-Login"
       DOZZLE_AUTH_HEADER_NAME: "Tailscale-User-Name"

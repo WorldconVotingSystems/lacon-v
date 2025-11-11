@@ -1,9 +1,9 @@
 # This is a sample deployment service configuration, based
-# on the production deployment for Seattle in 2025. Modify this
+# on the production deployment for LACon V. Modify this
 # if you want to use docker-compose to run nomnom.
 #
 # It depends on the creation of a valid `.env` file, a sample
-# of which you can find in the [Seattle in 2025 repo](https://github.com/LAConOrg/lacon-v/blob/main/deploy/production/.env.template).
+# of which you can find in the [LACon V repo](https://github.com/LAConOrg/lacon-v/blob/main/deploy/production/.env.template).
 name: "nomnom"
 x-image: &image
   image: ghcr.io/your-org/your-convention:${NOMNOM_VERSION:-main}
