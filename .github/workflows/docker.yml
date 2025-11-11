@@ -28,17 +28,19 @@ jobs:
           echo "=== WORKFLOW TRIGGER DEBUG ==="
           echo "Event name: ${{ github.event_name }}"
           echo "Repository: ${{ github.repository }}"
-          echo "Actor: ${{ github.actor }}"
-          echo "Ref: ${{ github.ref }}"
+          echo "Actor: ${GITHUB_ACTOR}"
+          echo "Ref: ${GITHUB_REF}"
           echo "SHA: ${{ github.sha }}"
           echo ""
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             echo "PR Details:"
-            echo "  Head repo: ${{ github.event.pull_request.head.repo.full_name }}"
+            echo "  Head repo: ${GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME}"
             echo "  Base repo: ${{ github.repository }}"
             echo "  Is external PR: ${{ github.event.pull_request.head.repo.full_name != github.repository }}"
           fi
           echo "==============================="
+        env:
+          GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME: ${{ github.event.pull_request.head.repo.full_name }}
 
       - name: set the build step environment
         run: |
@@ -63,11 +65,13 @@ jobs:
         run: |
           echo "=== PUSH PERMISSION CHECK ==="
           echo "This is a pull request from an external repository. Disabling image push."
-          echo "Head repo: ${{ github.event.pull_request.head.repo.full_name }}"
+          echo "Head repo: ${GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME}"
           echo "Base repo: ${{ github.repository }}"
           echo "Setting CAN_PUSH_IMAGES=false"
           echo "CAN_PUSH_IMAGES=false" >> "$GITHUB_ENV"
           echo "============================="
+        env:
+          GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME: ${{ github.event.pull_request.head.repo.full_name }}
 
       - name: persist the push instruction
         id: persist
@@ -153,9 +157,12 @@ jobs:
           echo "Platform pair: $PLATFORM_PAIR"
           echo "Registry image: $REGISTRY_IMAGE"
           echo "Can push images: $CAN_PUSH_IMAGES"
-          echo "Docker metadata tags: ${{ steps.meta.outputs.tags }}"
-          echo "Docker metadata labels: ${{ steps.meta.outputs.labels }}"
+          echo "Docker metadata tags: ${STEPS_META_OUTPUTS_TAGS}"
+          echo "Docker metadata labels: ${STEPS_META_OUTPUTS_LABELS}"
           echo "========================"
+        env:
+          STEPS_META_OUTPUTS_TAGS: ${{ steps.meta.outputs.tags }}
+          STEPS_META_OUTPUTS_LABELS: ${{ steps.meta.outputs.labels }}
 
       - name: Build and push by digest
         id: build
@@ -241,8 +248,8 @@ jobs:
           echo "Registry image: $REGISTRY_IMAGE"
           echo "Can push images: $CAN_PUSH_IMAGES"
           echo "Github event: ${{ github.event_name }}"
-          echo "Github ref: ${{ github.ref }}"
-          echo "Github actor: ${{ github.actor }}"
+          echo "Github ref: ${GITHUB_REF}"
+          echo "Github actor: ${GITHUB_ACTOR}"
           echo "============================="
 
       - name: Download digests
