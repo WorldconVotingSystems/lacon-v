@@ -5,29 +5,29 @@ version = "1.0.0"
 description = "Convention app for LAcon V"
 authors = []
 dependencies = [
-  "nomnom-hugoawards>=2026.0.0rc2,<2027",
+  "nomnom-hugoawards>=2026.0.0rc3,<2027",
   "granian>=1.6.3",
   "social-auth-app-django~=5.4",
   "django-debug-toolbar>=6.0.0",
 ]
 requires-python = "~=3.13.0"
 readme = "README.md"
-license = {text = "MIT"}
+license = { text = "MIT" }
 
 [tool.ruff.lint.isort]
 known-first-party = ["", "lacon_v_app"]
 
 [dependency-groups]
 dev = [
-    "djlint>=1.36.4",
-    "factory-boy~=3.3.0",
-    "faker>=37.6.0",
-    "icecream>=2.1.8",
-    "nomnom-hugoawards",
-    "pytest~=8.3.3",
-    "pytest-django~=4.9.0",
-    "pytest-xdist>=3.8.0",
-    "ruff>=0.14.4",
+  "djlint>=1.36.4",
+  "factory-boy~=3.3.0",
+  "faker>=37.6.0",
+  "icecream>=2.1.8",
+  "nomnom-hugoawards",
+  "pytest~=8.3.3",
+  "pytest-django~=4.9.0",
+  "pytest-xdist>=3.8.0",
+  "ruff>=0.14.4",
 ]
 
 [tool.pytest.ini_options]
@@ -36,7 +36,7 @@ looponfailroots = ["config", "lacon_v_app"]
 django_find_project = false
 filterwarnings = [
   # I know looponfailroots is 'deprecated' but ... i'm tired of seeing it
-  "ignore::DeprecationWarning:xdist.plugin"
+  "ignore::DeprecationWarning:xdist.plugin",
 ]
 
 [build-system]
