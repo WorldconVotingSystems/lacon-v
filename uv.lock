@@ -969,7 +969,7 @@ dev = [
 requires-dist = [
     { name = "django-debug-toolbar", specifier = ">=6.0.0" },
     { name = "granian", specifier = ">=1.6.3" },
-    { name = "nomnom-hugoawards", specifier = ">=2026.0.0rc2,<2027" },
+    { name = "nomnom-hugoawards", specifier = ">=2026.0.0rc3,<2027" },
     { name = "social-auth-app-django", specifier = "~=5.4" },
 ]
 
@@ -979,7 +979,7 @@ dev = [
     { name = "factory-boy", specifier = "~=3.3.0" },
     { name = "faker", specifier = ">=37.6.0" },
     { name = "icecream", specifier = ">=2.1.8" },
-    { name = "nomnom-hugoawards", editable = "../nomnom" },
+    { name = "nomnom-hugoawards" },
     { name = "pytest", specifier = "~=8.3.3" },
     { name = "pytest-django", specifier = "~=4.9.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
@@ -1034,7 +1034,7 @@ wheels = [
 
 [[package]]
 name = "nomnom-hugoawards"
-version = "2026.0.0rc2"
+version = "2026.0.0rc3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "boto3" },
@@ -1078,9 +1078,9 @@ dependencies = [
     { name = "svcs" },
     { name = "whitenoise" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/75/4a/849aa6fc9654513bf97c3ef5c0e1685d205cc39fd726551a5ad50db64728/nomnom_hugoawards-2026.0.0rc2.tar.gz", hash = "sha256:9c05790de3704679cf5563905cfd5d9507ea788c9bd6037cbafccae5e7784c6f", size = 2555022, upload-time = "2025-11-09T19:27:00.703Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ac/71/0725cb2c74ce9f03269123c2519007a65e71791a713b50c5e7734165ca0f/nomnom_hugoawards-2026.0.0rc3.tar.gz", hash = "sha256:db8826bbc41e3c6f4f2cbce8953adb74c8d4e51b51eac6ad65aeffcb566f6393", size = 2555044, upload-time = "2025-11-12T23:24:43.391Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5a/43/9f1aa9316269b85b064ec807878b25fbd3677f93aa5822ff16f308f61533/nomnom_hugoawards-2026.0.0rc2-py3-none-any.whl", hash = "sha256:185a33c0647ec5fe5f04a1269185bd304c36d9b64286f077bcef2210070e0c4f", size = 2318233, upload-time = "2025-11-09T19:26:58.766Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/7d/fda42663444bea7ff51cc747853c3ef8486b7fea06d8601307680b293aa6/nomnom_hugoawards-2026.0.0rc3-py3-none-any.whl", hash = "sha256:5305e2f389b0628c370dc935d0b6011ac50bb5759ca4e5ac36fbaae9251410c9", size = 2318239, upload-time = "2025-11-12T23:24:40.923Z" },
 ]
 
 [[package]]
