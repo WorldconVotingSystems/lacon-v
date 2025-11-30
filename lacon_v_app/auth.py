@@ -135,6 +135,13 @@ def create_user(
         # This could happen if reg-id is not provided in the response
         username = f"user_{response.get('email', 'anonymous')}"
 
+    # Check if user already exists by username before attempting creation
+    try:
+        existing_user = UserModel.objects.get(username=username)
+        return {"user": existing_user, "is_new": False}
+    except UserModel.DoesNotExist:
+        pass
+
     user_fields = {
         "username": username,
         "email": details.get("email", ""),
