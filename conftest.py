@@ -20,7 +20,7 @@ def use_test_settings(settings):
         if middleware != "whitenoise.middleware.WhiteNoiseMiddleware"
     ]
 
-    # User a faster password hasher
+    # Use a faster password hasher
     settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
     settings.STORAGES = {

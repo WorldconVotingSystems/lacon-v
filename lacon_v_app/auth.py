@@ -25,7 +25,6 @@ def adapt_regid_to_username(
     try:
         member_id = response["reg-id"]
     except KeyError:
-        # log a warning, maybe?
         return
 
     details["username"] = member_id

@@ -61,7 +61,7 @@ TEMPLATE_DEBUG = DEBUG
 
 if DEBUG:
     try:
-        from icecream import install as install_icecream
+        from icecream.builtins import install as install_icecream
 
         install_icecream()
     except ImportError:
@@ -97,7 +97,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.sites",
-    # use whitenoise to serve static files, instead of django's builtin
+    # Use whitenoise to serve static files
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
     # deferred tasks
@@ -148,10 +148,6 @@ SITE_ID = 1
 NOMNOM_ALLOW_USERNAME_LOGIN_FOR_MEMBERS = get_bool("NOM_ALLOW_USERNAME_LOGIN")
 
 AUTHENTICATION_BACKENDS = [
-    # NOTE: the nomnom.nominate.apps.AppConfig.ready() hook will install handlers in this, as the first
-    # set. Any handler in here will be superseded by those.
-    #
-    # Uncomment following if you want to access the admin
     "lacon_v_app.auth.LaconMemberBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
@@ -248,12 +244,11 @@ LOGOUT_REDIRECT_URL = "index"
 # we are using postgres, so this is recommended in the docs.
 SOCIAL_AUTH_JSONFIELD_ENABLED = True
 
-# If using social authentication, configure it here. See the social_django documentation for
-# details.
+# Social authentication is configured using Authentik OIDC
 
 # Common social auth settings
-# Can't use the backend-specific one because of https://github.com/python-social-auth/social-core/issues/875
-# SOCIAL_AUTH_CLYDE_LOGIN_ERROR_URL = "nominate:login_error"
+# Use the generic LOGIN_ERROR_URL instead of backend-specific SOCIAL_AUTH_LACON_LOGIN_ERROR_URL
+# due to https://github.com/python-social-auth/social-core/issues/875
 SOCIAL_AUTH_LOGIN_ERROR_URL = "election:login_error"
 
 SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = ["username", "first_name", "email"]
@@ -265,8 +260,7 @@ SOCIAL_AUTH_LACON_OIDC_ENDPOINT = get_string(
     "https://auth.lacon.org/application/o/nom-nom-production",
 )
 
-# This is a probably-okay social auth pipeline, but you may need to adjust it for your needs.
-# See the social_django documentation for details.
+# Social authentication pipeline
 SOCIAL_AUTH_PIPELINE = [
     "social_core.pipeline.social_auth.social_details",
     "social_core.pipeline.social_auth.social_uid",
@@ -442,7 +436,6 @@ LOGGING = {
 
 # Sentry
 if get_string("NOM_SENTRY_SDK_DSN"):
-    # settings.py
     import sentry_sdk
 
     sentry_sdk.init(
@@ -459,15 +452,6 @@ if get_string("NOM_SENTRY_SDK_DSN"):
         # include the user and client IP
         send_default_pii=True,
     )
-
-if DEBUG:
-    try:
-        import icecream
-
-        icecream.install()
-    except ImportError:
-        # it's a nice-to-have, not a need-to-have
-        pass
 
 if DEBUG:
     INTERNAL_IPS = [
