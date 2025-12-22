@@ -259,6 +259,14 @@ SOCIAL_AUTH_LACON_OIDC_ENDPOINT = get_string(
     "NOM_AUTHENTIK_OIDC_ENDPOINT",
     "https://auth.lacon.org/application/o/nom-nom-production",
 )
+SOCIAL_AUTH_LACON_INVALIDATION_ENDPOINT = get_string(
+    "NOM_AUTHENTIK_INVALIDATION_ENDPOINT",
+    "https://auth.lacon.org/flows/-/default/invalidation/",
+)
+SOCIAL_AUTH_LACON_JWKS_URI = get_string(
+    "NOM_AUTHENTIK_JWKS_URI",
+    f"{SOCIAL_AUTH_LACON_OIDC_ENDPOINT}/jwks/",
+)
 
 # Social authentication pipeline
 SOCIAL_AUTH_PIPELINE = [
@@ -276,6 +284,7 @@ SOCIAL_AUTH_PIPELINE = [
     "lacon_v_app.auth.set_member_details",
     "nomnom.nominate.social_auth.pipeline.set_user_wsfs_membership",
     "nomnom.nominate.social_auth.pipeline.add_election_permissions",
+    "lacon_v_app.auth.store_oidc_session_mapping",
 ]
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/

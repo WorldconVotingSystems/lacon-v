@@ -23,6 +23,8 @@ from django.urls import include, path
 from django_svcs.apps import svcs_from
 from nomnom.convention import ConventionConfiguration
 
+from lacon_v_app import logout as lacon_logout
+
 convention_configuration = svcs_from().get(ConventionConfiguration)
 
 urlpatterns = (
@@ -34,6 +36,8 @@ urlpatterns = (
         path("admin/action-forms/", include("django_admin_action_forms.urls")),
         path("admin/", admin.site.urls),
         path("", include("social_django.urls", namespace="social")),
+        # Must come before accounts/ because it overrides one of the standard routes
+        path("accounts/logout/", lacon_logout.rp_initiated_logout, name="logout"),
         path("accounts/", include("django.contrib.auth.urls")),
         path("watchman/", include("watchman.urls")),
         path("__reload__/", include("django_browser_reload.urls")),
