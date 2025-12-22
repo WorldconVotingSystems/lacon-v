@@ -2,72 +2,46 @@
 <header class="{% if is_admin_page %}admin-header{% endif %}">
     <div id="top-bar"
          style="display: flex;
-                justify-content: space-between;
                 align-items: center;
                 width: 100%;
                 background-color: var(--lacon-teal);
                 padding: 0">
-        <div id="logo-container"
-             style="height: 100%;
-                    display: flex;
-                    align-items: center;
-                    flex-shrink: 0;
-                    padding: 0 35px;
-                    background-color: var(--lacon-dark-blue)">
-            <a href="{{ CONVENTION_SITE_URL }}" style="flex-shrink: 0;">
-                <img id="logo"
-                     style="margin: 20px 0px"
-                     src="{% static "images/logo-menu-small-final2.png" %}"
-                     alt="LAcon V Logo">
-            </a>
-        </div>
-        <div id="top-spacer"
-             style="flex: 1;
-                    display: flex;
-                    justify-content: flex-end;
-                    padding-right: 2rem">
+        <div style="max-width: 1240px; width: 100%; margin: 0 auto; display: flex; align-items: center; justify-content: space-between">
+            <div id="logo-container"
+                style="height: 100%;
+                        display: flex;
+                        align-items: center;
+                        flex-shrink: 0;
+                        padding: 0 35px;
+                        background-color: var(--lacon-dark-blue)">
+                <a href="{{ CONVENTION_SITE_URL }}" style="flex-shrink: 0;">
+                    <img id="logo"
+                        style="margin: 20px 0px"
+                        src="{% static "images/logo-menu-small-final2.png" %}"
+                        alt="LAcon V Logo">
+                </a>
+            </div>
             {% if user.is_authenticated %}
-                <div style="background-color: var(--lacon-nav-red);
-                            padding: 18px 10px;
-                            margin: 20px 20px 15px 0;
-                            position: relative">
-                    <form method="post" action="{% url 'logout' %}">
-                        {% csrf_token %}
-                        <button class="btn nav-link" type="submit">
-                            {% blocktranslate with user_t=user|user_display_name %}Sign Out<br>{{ user_t }}{% endblocktranslate %}
-                        </button>
-                    </form>
-                </div>
+                <form method="post" action="{% url 'logout' %}">
+                    {{ user|user_display_name }} 
+                    {% csrf_token %}
+                    <button class="" type="submit">
+                        {% blocktranslate %}Sign Out{% endblocktranslate %}
+                    </button>
+                </form>
             {% endif %}
         </div>
     </div>
-    <nav style="display: flex;
-                width: 100%;
-                background-color: var(--lacon-nav-grey)">
-        <a class="nav-link"
-           href="{% url 'election:index' %}"
-           style="flex: 0 0 20%;
-                  text-align: center;
-                  padding: 0.5rem">{% translate "Hugo Awards" %}</a>
-        {% if ADVISORY_VOTES %}
-            <a class="nav-link"
-               href="{% url "advise:advisory_votes" %}"
-               style="flex: 0 0 20%;
-                      text-align: center;
-                      padding: 0.5rem">{% translate "Advisory Votes" %}</a>
-        {% endif %}
-        <a class="nav-link"
-           href="{{ CONVENTION_SITE_URL }}"
-           style="flex: 0 0 20%;
-                  text-align: center;
-                  padding: 0.5rem">LAcon site</a>
-        {% if request.user.is_staff %}
-            <a class="nav-link"
-               href="{% url "admin:index" %}"
-               style="flex: 0 0 20%;
-                      text-align: center;
-                      margin-left: auto;
-                      padding: 0.5rem">{% translate "Admin" %}</a>
-        {% endif %}
+    <nav>
+        <ul>
+            <li><a href="{% url 'election:index' %}">{% translate "Hugo Awards" %}</a></li>
+            {% if ADVISORY_VOTES %}
+                <li><a href="{% url "advise:advisory_votes" %}">{% translate "Advisory Votes" %}</a></li>
+            {% endif %}
+            <li><a href="{{ CONVENTION_SITE_URL }}">LAcon site</a></li>
+            {% if request.user.is_staff %}
+                <li><a href="{% url "admin:index" %}">{% translate "Admin" %}</a></li>
+            {% endif %}
+        </ul>
     </nav>
 </header>
