@@ -180,3 +180,35 @@ def set_member_details(
     user.save()
 
     return
+
+
+def store_oidc_session_mapping(
+    strategy: BaseStrategy,
+    details: dict[str, Any],
+    user=UserModel,
+    backend=None,
+    *args,
+    response: dict[str, Any],
+    **kwargs,
+) -> None:
+    """Stash OIDC `sid` in the user's session for post-login mapping.
+
+    The actual mapping from `sid -> session_key` should be created after login,
+    in a `user_logged_in` signal handler, to ensure we capture the final (rotated)
+    session key that exists in `django_session`.
+    """
+    # Only process for OIDC backends
+    if not hasattr(backend, "id_token"):
+        return
+
+    # Get the sid from the validated id_token claims
+    id_token_claims = getattr(backend, "id_token", {})
+    sid = id_token_claims.get("sid")
+
+    if not sid:
+        return
+
+    # Stash the sid in the session for use by the post-login signal
+    strategy.session["oidc_sid"] = sid
+
+    strategy.session.save()

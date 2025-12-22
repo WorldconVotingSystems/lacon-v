@@ -949,6 +949,7 @@ dependencies = [
     { name = "django-debug-toolbar" },
     { name = "granian" },
     { name = "nomnom-hugoawards" },
+    { name = "pyjwt" },
     { name = "social-auth-app-django" },
 ]
 
@@ -970,6 +971,7 @@ requires-dist = [
     { name = "django-debug-toolbar", specifier = ">=6.0.0" },
     { name = "granian", specifier = ">=1.6.3" },
     { name = "nomnom-hugoawards", specifier = ">=2026.0.0rc3,<2027" },
+    { name = "pyjwt", specifier = ">=2.8.0" },
     { name = "social-auth-app-django", specifier = "~=5.4" },
 ]
 
