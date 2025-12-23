@@ -309,6 +309,18 @@ STATIC_ROOT = get_string("NOM_STATIC_FILE_ROOT", "staticfiles")
 GOOGLE_FONTS_DIR = BASE_DIR / "lacon_v_app" / "static" / "google_fonts"
 STATICFILES_DIRS = [GOOGLE_FONTS_DIR]
 
+# Use Whitenoise's storage backend for better static file handling
+# This adds cache-busting hashes to filenames and handles updates properly
+if not DEBUG:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
