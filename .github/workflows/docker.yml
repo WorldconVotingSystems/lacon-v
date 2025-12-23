@@ -95,7 +95,6 @@ jobs:
       matrix:
         platform:
           - linux/amd64
-          - linux/arm64
     permissions:
       contents: read
       packages: write
@@ -269,7 +268,7 @@ jobs:
           find /tmp/digests -type f -exec echo "File: {} ($(basename {}))" \;
           echo ""
           echo "Total digest files: $(find /tmp/digests -type f | wc -l)"
-          echo "Expected platforms: linux/amd64, linux/arm64"
+          echo "Expected platforms: linux/amd64"
           echo "===================================="
 
       - name: Login to Docker Hub
